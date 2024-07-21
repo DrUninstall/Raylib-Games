@@ -3,6 +3,7 @@
 #include <deque>
 #include <string>
 #include <ctime>
+#include <sstream>
 
 using namespace std::chrono;
 
@@ -19,6 +20,9 @@ int main()
     int screenWidth = defaultScreenWidth;
     int screenHeight = defaultScreenHeight;
     InitWindow(screenWidth, screenHeight, "Quick Tap Training");
+    
+    int targetFPS = 360; // Set the default framerate to 360 FPS
+    SetTargetFPS(targetFPS);
 
     bool isButtonPressed = false;
     bool isSettingKey = false; // Flag for setting the key
@@ -28,6 +32,7 @@ int main()
     double confirmationStartTime = 0.0; // Time when the confirmation message is shown
     bool isChangingResolution = false; // Flag for changing resolution
     bool isChangingFullscreen = false; // Flag for changing fullscreen
+    bool isChangingFPS = false; // Flag for changing FPS
 
     high_resolution_clock::time_point pressStartTime;
     high_resolution_clock::time_point releaseStartTime;
@@ -39,8 +44,23 @@ int main()
     std::deque<Attempt> attemptLog; // To store the log of attempts
     int scrollPosition = 0; // Current scroll position
 
+    double lastFrameTime = GetTime();
+    int frameCount = 0;
+    double fps = 0;
+
     while (!WindowShouldClose()) 
     {
+        double currentFrameTime = GetTime();
+        frameCount++;
+        
+        // Calculate FPS every 60 frames
+        if (frameCount >= 60)
+        {
+            fps = 60.0 / (currentFrameTime - lastFrameTime);
+            lastFrameTime = currentFrameTime;
+            frameCount = 0;
+        }
+
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
@@ -66,16 +86,16 @@ int main()
         if (isSettingsMenuOpen) 
         {
             // Draw settings menu background
-            DrawRectangle(screenWidth / 2 - 150, screenHeight / 2 - 180, 300, 360, LIGHTGRAY);
+            DrawRectangle(screenWidth / 2 - 150, screenHeight / 2 - 220, 300, 460, LIGHTGRAY);
 
             // Draw "Change Key" button
             const char* changeKeyText = "Change Key";
             int changeKeyTextWidth = MeasureText(changeKeyText, 20);
             bool isHoveringChangeKey = (mousePosition.x >= screenWidth / 2 - changeKeyTextWidth / 2 &&
                                         mousePosition.x <= screenWidth / 2 - changeKeyTextWidth / 2 + changeKeyTextWidth &&
-                                        mousePosition.y >= screenHeight / 2 - 160 && mousePosition.y <= screenHeight / 2 - 140);
+                                        mousePosition.y >= screenHeight / 2 - 200 && mousePosition.y <= screenHeight / 2 - 180);
             Color changeKeyTextColor = isHoveringChangeKey ? RED : DARKGRAY;
-            DrawText(changeKeyText, screenWidth / 2 - changeKeyTextWidth / 2, screenHeight / 2 - 160, 20, changeKeyTextColor);
+            DrawText(changeKeyText, screenWidth / 2 - changeKeyTextWidth / 2, screenHeight / 2 - 200, 20, changeKeyTextColor);
 
             if (isHoveringChangeKey && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) 
             {
@@ -83,6 +103,7 @@ int main()
                 isChangingMs = false;
                 isChangingResolution = false;
                 isChangingFullscreen = false;
+                isChangingFPS = false;
             }
 
             // Draw "Change ms" button
@@ -90,9 +111,9 @@ int main()
             int changeMsTextWidth = MeasureText(changeMsText, 20);
             bool isHoveringChangeMs = (mousePosition.x >= screenWidth / 2 - changeMsTextWidth / 2 &&
                                        mousePosition.x <= screenWidth / 2 - changeMsTextWidth / 2 + changeMsTextWidth &&
-                                       mousePosition.y >= screenHeight / 2 - 120 && mousePosition.y <= screenHeight / 2 - 100);
+                                       mousePosition.y >= screenHeight / 2 - 160 && mousePosition.y <= screenHeight / 2 - 140);
             Color changeMsTextColor = isHoveringChangeMs ? RED : DARKGRAY;
-            DrawText(changeMsText, screenWidth / 2 - changeMsTextWidth / 2, screenHeight / 2 - 120, 20, changeMsTextColor);
+            DrawText(changeMsText, screenWidth / 2 - changeMsTextWidth / 2, screenHeight / 2 - 160, 20, changeMsTextColor);
 
             if (isHoveringChangeMs && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) 
             {
@@ -100,6 +121,7 @@ int main()
                 isSettingKey = false;
                 isChangingResolution = false;
                 isChangingFullscreen = false;
+                isChangingFPS = false;
             }
 
             // Draw "Change Resolution" button
@@ -107,9 +129,9 @@ int main()
             int changeResTextWidth = MeasureText(changeResText, 20);
             bool isHoveringChangeRes = (mousePosition.x >= screenWidth / 2 - changeResTextWidth / 2 &&
                                         mousePosition.x <= screenWidth / 2 - changeResTextWidth / 2 + changeResTextWidth &&
-                                        mousePosition.y >= screenHeight / 2 - 80 && mousePosition.y <= screenHeight / 2 - 60);
+                                        mousePosition.y >= screenHeight / 2 - 120 && mousePosition.y <= screenHeight / 2 - 100);
             Color changeResTextColor = isHoveringChangeRes ? RED : DARKGRAY;
-            DrawText(changeResText, screenWidth / 2 - changeResTextWidth / 2, screenHeight / 2 - 80, 20, changeResTextColor);
+            DrawText(changeResText, screenWidth / 2 - changeResTextWidth / 2, screenHeight / 2 - 120, 20, changeResTextColor);
 
             if (isHoveringChangeRes && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) 
             {
@@ -117,6 +139,7 @@ int main()
                 isSettingKey = false;
                 isChangingMs = false;
                 isChangingFullscreen = false;
+                isChangingFPS = false;
             }
 
             // Draw "Toggle Fullscreen" button
@@ -124,9 +147,9 @@ int main()
             int toggleFullscreenTextWidth = MeasureText(toggleFullscreenText, 20);
             bool isHoveringToggleFullscreen = (mousePosition.x >= screenWidth / 2 - toggleFullscreenTextWidth / 2 &&
                                                mousePosition.x <= screenWidth / 2 - toggleFullscreenTextWidth / 2 + toggleFullscreenTextWidth &&
-                                               mousePosition.y >= screenHeight / 2 - 40 && mousePosition.y <= screenHeight / 2 - 20);
+                                               mousePosition.y >= screenHeight / 2 - 80 && mousePosition.y <= screenHeight / 2 - 60);
             Color toggleFullscreenTextColor = isHoveringToggleFullscreen ? RED : DARKGRAY;
-            DrawText(toggleFullscreenText, screenWidth / 2 - toggleFullscreenTextWidth / 2, screenHeight / 2 - 40, 20, toggleFullscreenTextColor);
+            DrawText(toggleFullscreenText, screenWidth / 2 - toggleFullscreenTextWidth / 2, screenHeight / 2 - 80, 20, toggleFullscreenTextColor);
 
             if (isHoveringToggleFullscreen && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) 
             {
@@ -134,6 +157,25 @@ int main()
                 isSettingKey = false;
                 isChangingMs = false;
                 isChangingResolution = false;
+                isChangingFPS = false;
+            }
+
+            // Draw "Change FPS" button
+            const char* changeFPSText = "Change FPS";
+            int changeFPSTextWidth = MeasureText(changeFPSText, 20);
+            bool isHoveringChangeFPS = (mousePosition.x >= screenWidth / 2 - changeFPSTextWidth / 2 &&
+                                        mousePosition.x <= screenWidth / 2 - changeFPSTextWidth / 2 + changeFPSTextWidth &&
+                                        mousePosition.y >= screenHeight / 2 - 40 && mousePosition.y <= screenHeight / 2 - 20);
+            Color changeFPSTextColor = isHoveringChangeFPS ? RED : DARKGRAY;
+            DrawText(changeFPSText, screenWidth / 2 - changeFPSTextWidth / 2, screenHeight / 2 - 40, 20, changeFPSTextColor);
+
+            if (isHoveringChangeFPS && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) 
+            {
+                isChangingFPS = true;
+                isSettingKey = false;
+                isChangingMs = false;
+                isChangingResolution = false;
+                isChangingFullscreen = false;
             }
 
             // Draw "Close App" button
@@ -153,7 +195,7 @@ int main()
 
             if (isSettingKey) 
             {
-                DrawText("Press any key to set as the target key...", screenWidth / 2 - 140, screenHeight / 2 + 40, 20, DARKGRAY);
+                DrawText("Press any key to set as the target key...", screenWidth / 2 - 140, screenHeight / 2 + 50, 20, DARKGRAY);
 
                 for (int key = 32; key < 350; key++) 
                 {
@@ -170,7 +212,7 @@ int main()
             } 
             else if (isChangingMs) 
             {
-                DrawText("Use UP/DOWN keys to change milliseconds", screenWidth / 2 - 140, screenHeight / 2 + 40, 20, DARKGRAY);
+                DrawText("Use UP/DOWN keys to change milliseconds", screenWidth / 2 - 140, screenHeight / 2 + 50, 20, DARKGRAY);
 
                 if (IsKeyPressed(KEY_UP)) 
                 {
@@ -181,11 +223,11 @@ int main()
                     maxPressDuration--;
                 }
 
-                DrawText(TextFormat("Current ms: %d", maxPressDuration), screenWidth / 2 - 60, screenHeight / 2 + 60, 20, DARKGRAY);
+                DrawText(TextFormat("Current ms: %d", maxPressDuration), screenWidth / 2 - 60, screenHeight / 2 + 70, 20, DARKGRAY);
             }
             else if (isChangingResolution) 
             {
-                DrawText("Use 1: 1080x720, 2: 1280x720, 3: 1920x1080", screenWidth / 2 - 140, screenHeight / 2 + 40, 20, DARKGRAY);
+                DrawText("Use 1: 1080x720, 2: 1280x720, 3: 1920x1080", screenWidth / 2 - 140, screenHeight / 2 + 50, 20, DARKGRAY);
 
                 if (IsKeyPressed(KEY_ONE)) 
                 {
@@ -211,13 +253,30 @@ int main()
             }
             else if (isChangingFullscreen) 
             {
-                DrawText("Press F to toggle fullscreen mode", screenWidth / 2 - 140, screenHeight / 2 + 40, 20, DARKGRAY);
+                DrawText("Press F to toggle fullscreen mode", screenWidth / 2 - 140, screenHeight / 2 + 50, 20, DARKGRAY);
 
                 if (IsKeyPressed(KEY_F)) 
                 {
                     ToggleFullscreen();
                     isChangingFullscreen = false;
                 }
+            }
+            else if (isChangingFPS) 
+            {
+                DrawText("Use UP/DOWN keys to change FPS", screenWidth / 2 - 140, screenHeight / 2 + 50, 20, DARKGRAY);
+
+                if (IsKeyPressed(KEY_UP)) 
+                {
+                    targetFPS += 10;
+                    SetTargetFPS(targetFPS);
+                }
+                else if (IsKeyPressed(KEY_DOWN)) 
+                {
+                    targetFPS -= 10;
+                    SetTargetFPS(targetFPS);
+                }
+
+                DrawText(TextFormat("Current FPS: %d", targetFPS), screenWidth / 2 - 60, screenHeight / 2 + 70, 20, DARKGRAY);
             }
         } 
         else 
@@ -309,6 +368,9 @@ int main()
                 showConfirmation = false;
             }
         }
+
+        // Draw the FPS on the screen
+        DrawText(TextFormat("FPS: %.2f", fps), 10, 10, 20, RED);
 
         EndDrawing();
     }
